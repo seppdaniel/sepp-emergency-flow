@@ -48,21 +48,9 @@ export default function HomePage() {
   const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null);
   const [showMetrics, setShowMetrics] = useState(false);
   const [circuitOpen, setCircuitOpen] = useState(false);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
 
   useEffect(() => {
     setCircuitOpen(decisionBreaker.getState() === 'open');
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallBanner(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   useEffect(() => {
@@ -176,35 +164,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {showInstallBanner && (
-          <div className="mb-4 rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold text-emerald-400">Install Emergency Flow</p>
-              <p className="text-xs text-emerald-300">Add to your home screen for instant access</p>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <button
-                onClick={async () => {
-                  if (deferredPrompt) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    await (deferredPrompt as any).prompt();
-                    setShowInstallBanner(false);
-                  }
-                }}
-                className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
-              >
-                Install
-              </button>
-              <button
-                onClick={() => setShowInstallBanner(false)}
-                className="rounded bg-gray-700 px-3 py-1.5 text-xs text-gray-300"
-              >
-                Later
-              </button>
-            </div>
-          </div>
-        )}
-
         {showMetrics && metrics && (
           <div className="mb-6">
             <MetricsPanel metrics={metrics} />
@@ -255,7 +214,7 @@ export default function HomePage() {
             id="emergency-select"
             value={selectedEmergency}
             onChange={(e) => setSelectedEmergency(e.target.value as EmergencyType)}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-4 text-gray-100 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-gray-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
           >
             <option value="">Choose an option</option>
             {EMERGENCY_OPTIONS.map((option) => (
@@ -268,7 +227,7 @@ export default function HomePage() {
           <button
             onClick={handleSearch}
             disabled={!selectedEmergency || isLoading}
-            className="mt-4 w-full rounded-lg bg-emerald-600 px-6 py-4 text-lg font-semibold text-white transition-colors hover:bg-emerald-500 active:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500"
+            className="mt-4 w-full rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500 sm:py-4"
           >
             {isLoading ? 'Searching...' : 'Find best destination'}
           </button>
@@ -344,7 +303,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <p className="text-xs text-gray-400">Est. Time</p>
                       <p className="font-semibold">{bestHospital.estimatedTime} min</p>
@@ -356,15 +315,6 @@ export default function HomePage() {
                     <div>
                       <p className="text-xs text-gray-400">Beds</p>
                       <p className="font-semibold">{bestHospital.beds} avail</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">Status</p>
-                      <span className={`text-sm font-semibold ${
-                        bestHospital.status === 'excellent' ? 'text-emerald-400' :
-                        bestHospital.status === 'good' ? 'text-yellow-400' : 'text-red-400'
-                      }`}>
-                        {bestHospital.status.charAt(0).toUpperCase() + bestHospital.status.slice(1)}
-                      </span>
                     </div>
                   </div>
 
@@ -388,7 +338,7 @@ export default function HomePage() {
                   {alternativeHospitals.map((hospital) => (
                     <div
                       key={hospital.id}
-                      className="rounded-lg border border-gray-700 bg-gray-900 p-4 active:bg-gray-800 transition-colors"
+                      className="rounded-lg border border-gray-700 bg-gray-900 p-4"
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -402,7 +352,7 @@ export default function HomePage() {
                           <span className="ml-1 text-xs text-gray-500">/100</span>
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400 mt-1">
+                      <div className="flex gap-4 text-sm text-gray-400">
                         <span>{hospital.estimatedTime} min</span>
                         <span>•</span>
                         <span>{hospital.distance} km</span>

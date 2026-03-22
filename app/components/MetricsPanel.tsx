@@ -66,14 +66,14 @@ export default function MetricsPanel({ metrics }: MetricsPanelProps) {
         </div>
       </div>
 
-      <div className="mb-6 overflow-x-auto">
+      <div className="mb-6">
         <h3 className="mb-3 text-sm font-semibold text-gray-400 uppercase tracking-wide">
           Response Times
         </h3>
         {routeEntries.length === 0 ? (
           <p className="text-sm text-gray-500">No data yet</p>
         ) : (
-          <div className="space-y-2 min-w-[320px]">
+          <div className="space-y-2">
             {routeEntries.map(([route, data]) => (
               <div key={route} className="flex items-center gap-3">
                 <span className="w-32 flex-shrink-0 truncate text-xs text-gray-400">
@@ -111,18 +111,20 @@ export default function MetricsPanel({ metrics }: MetricsPanelProps) {
         {decisionEntries.length === 0 ? (
           <p className="text-sm text-gray-500">No data yet</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-2">
             {decisionEntries.map(([type, data]) => (
-              <div key={type} className="flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2">
-                <span className="text-xs text-gray-300">
+              <div key={type} className="flex items-center justify-between">
+                <span className="text-sm text-gray-300">
                   {formatEmergencyType(type)}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {data.count}
-                </span>
-                <span className={`rounded px-2 py-0.5 text-xs font-medium ${getScoreColor(data.avgScore)}`}>
-                  avg {data.avgScore}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">
+                    {data.count} decision{data.count !== 1 ? 's' : ''}
+                  </span>
+                  <span className={`rounded px-2 py-0.5 text-xs font-medium ${getScoreColor(data.avgScore)}`}>
+                    avg {data.avgScore}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
