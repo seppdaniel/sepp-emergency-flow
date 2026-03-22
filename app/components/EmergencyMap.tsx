@@ -59,7 +59,7 @@ export default function EmergencyMap({ hospitals, bestHospitalId, userLocation }
     <MapContainer
       center={[-25.4372, -49.2731]}
       zoom={13}
-      style={{ height: '400px', width: '100%', borderRadius: '0.5rem' }}
+      style={{ height: 'clamp(280px, 45vw, 420px)', width: '100%', borderRadius: '0.5rem' }}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
