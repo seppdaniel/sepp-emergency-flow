@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { EmergencyType, Hospital, DecisionResult } from '@/lib/types';
-import { fetchDecision } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { EmergencyType, Hospital, DecisionResult, HospitalBase } from '@/lib/types';
+import { fetchDecision, fetchHospitals, fetchDecisionWithData } from '@/lib/api';
 
 const EMERGENCY_OPTIONS: { value: EmergencyType; label: string }[] = [
   { value: 'heart_attack', label: 'Heart attack' },
@@ -32,6 +32,27 @@ export default function HomePage() {
   const [result, setResult] = useState<DecisionResult | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveHospitals, setLiveHospitals] = useState<(HospitalBase & { beds: number; occupancy: number })[] | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedEmergency) return;
+
+    const pollHospitals = async () => {
+      try {
+        const hospitals = await fetchHospitals();
+        setLiveHospitals(hospitals);
+        setLastUpdated(new Date().toLocaleTimeString());
+      } catch {
+        // Silent polling error
+      }
+    };
+
+    pollHospitals();
+    const interval = setInterval(pollHospitals, 10000);
+
+    return () => clearInterval(interval);
+  }, [selectedEmergency]);
 
   const handleSearch = async () => {
     if (!selectedEmergency) return;
@@ -42,7 +63,9 @@ export default function HomePage() {
     setResult(null);
 
     try {
-      const decision = await fetchDecision(selectedEmergency);
+      const decision = liveHospitals
+        ? await fetchDecisionWithData(selectedEmergency, liveHospitals)
+        : await fetchDecision(selectedEmergency);
       setResult(decision);
     } catch (err) {
       setError('Unable to connect to the decision service. Please try again.');
@@ -67,12 +90,25 @@ export default function HomePage() {
         </header>
 
         <section className="mb-6 rounded-lg bg-gray-900 p-6 shadow-lg">
-          <label
-            htmlFor="emergency-select"
-            className="mb-2 block text-sm font-medium text-gray-300"
-          >
-            Select Emergency Type
-          </label>
+          <div className="mb-2 flex items-center justify-between">
+            <label
+              htmlFor="emergency-select"
+              className="block text-sm font-medium text-gray-300"
+            >
+              Select Emergency Type
+            </label>
+            {liveHospitals && (
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-1">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+                  <span className="text-xs text-emerald-400">Live data</span>
+                </div>
+                {lastUpdated && (
+                  <span className="text-xs text-gray-500">Updated: {lastUpdated}</span>
+                )}
+              </div>
+            )}
+          </div>
           <select
             id="emergency-select"
             value={selectedEmergency}

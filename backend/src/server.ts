@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { decisionRoutes } from './routes/decision';
+import { hospitalRoutes } from './routes/hospitals';
+import { startSimulator } from './simulator';
 
 const fastify = Fastify({
   logger: true,
@@ -12,11 +14,14 @@ async function start(): Promise<void> {
   });
 
   await fastify.register(decisionRoutes);
+  await fastify.register(hospitalRoutes);
 
   await fastify.listen({
     host: '0.0.0.0',
     port: 3001,
   });
+
+  startSimulator();
 
   fastify.log.info('Emergency Flow API running on http://localhost:3001');
 }

@@ -5,6 +5,14 @@ export type EmergencyType =
   | 'breathing_problem'
   | 'severe_bleeding';
 
+export interface HospitalBase {
+  id: string;
+  name: string;
+  distance: number;
+  estimatedTime: number;
+  specialties: EmergencyType[];
+}
+
 export interface Hospital {
   id: string;
   name: string;
