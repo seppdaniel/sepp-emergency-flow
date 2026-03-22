@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { decisionRoutes } from './routes/decision';
 import { hospitalRoutes } from './routes/hospitals';
 import { historyRoutes } from './routes/history';
@@ -14,6 +15,16 @@ const fastify = Fastify({
 async function start(): Promise<void> {
   await fastify.register(cors, {
     origin: 'http://localhost:3000',
+  });
+
+  await fastify.register(rateLimit, {
+    max: 60,
+    timeWindow: '1 minute',
+    errorResponseBuilder: () => ({
+      error: 'Too many requests',
+      message: 'Rate limit exceeded. Maximum 60 requests per minute.',
+      retryAfter: 60,
+    }),
   });
 
   registerMetricsHook(fastify);

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
+import { historyQuerySchema } from '../validation/schemas';
 
 interface HistoryQuery {
   limit?: string;
@@ -7,7 +8,13 @@ interface HistoryQuery {
 
 export async function historyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{ Querystring: HistoryQuery }>('/api/history', async (request, reply) => {
-    const limit = Math.min(100, Math.max(1, parseInt(request.query.limit || '20', 10)));
+    const parseResult = historyQuerySchema.safeParse(request.query);
+    
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: 'Invalid query parameters' });
+    }
+    
+    const { limit } = parseResult.data;
 
     try {
       const records = await prisma.decisionRecord.findMany({

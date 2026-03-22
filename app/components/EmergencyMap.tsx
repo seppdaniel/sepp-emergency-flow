@@ -29,6 +29,7 @@ export default function EmergencyMap({ hospitals, bestHospitalId, userLocation }
       shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
     });
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIcons({
       default: new L.Icon.Default(),
       best: L.divIcon({

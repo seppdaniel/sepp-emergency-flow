@@ -1,21 +1,24 @@
 import { FastifyInstance } from 'fastify';
-import { EmergencyType, Hospital, HospitalBase } from '../../../lib/types';
+import { EmergencyType, Hospital } from '../../../lib/types';
 import { getHospitalSnapshot } from '../simulator';
 import { rankHospitals, EMERGENCY_WEIGHTS } from '../../../lib/decisionEngine';
 import { prisma } from '../db';
 import { recordDecision } from '../metrics';
-
-const VALID_EMERGENCY_TYPES: EmergencyType[] = [
-  'heart_attack',
-  'stroke',
-  'accident',
-  'breathing_problem',
-  'severe_bleeding',
-];
+import { decisionRequestSchema } from '../validation/schemas';
 
 interface DecisionBody {
   emergencyType: string;
-  hospitals?: (HospitalBase & { beds: number; occupancy: number })[];
+  hospitals?: {
+    id: string;
+    name: string;
+    distance: number;
+    estimatedTime: number;
+    beds: number;
+    occupancy: number;
+    specialties: EmergencyType[];
+    lat: number;
+    lng: number;
+  }[];
   userLocation?: { lat: number; lng: number };
 }
 
@@ -34,10 +37,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 function generateReasoning(best: Hospital, emergencyType: EmergencyType): string {
   const weights = EMERGENCY_WEIGHTS[emergencyType];
   
-  let highestKey = 'time';
+  let highestKey: 'time' | 'distance' | 'beds' | 'occupancy' | 'specialtyBonus' = 'time';
   let highestValue = 0;
   
-  const keys = ['time', 'distance', 'beds', 'occupancy', 'specialtyBonus'] as const;
+  const keys: ('time' | 'distance' | 'beds' | 'occupancy' | 'specialtyBonus')[] = ['time', 'distance', 'beds', 'occupancy', 'specialtyBonus'];
   keys.forEach((key) => {
     if (weights[key] > highestValue) {
       highestValue = weights[key];
@@ -62,11 +65,16 @@ function generateReasoning(best: Hospital, emergencyType: EmergencyType): string
 
 export async function decisionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: DecisionBody }>('/api/decision', async (request, reply) => {
-    const { emergencyType, hospitals, userLocation } = request.body;
-
-    if (!emergencyType || !VALID_EMERGENCY_TYPES.includes(emergencyType as EmergencyType)) {
-      return reply.status(400).send({ error: 'Invalid emergency type' });
+    const parseResult = decisionRequestSchema.safeParse(request.body);
+    
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Validation failed',
+        details: parseResult.error.flatten().fieldErrors,
+      });
     }
+    
+    const { emergencyType, userLocation, hospitals } = parseResult.data;
 
     try {
       let snapshot = hospitals || getHospitalSnapshot();
@@ -79,12 +87,12 @@ export async function decisionRoutes(fastify: FastifyInstance): Promise<void> {
         });
       }
 
-      const ranked = rankHospitals(snapshot, emergencyType as EmergencyType);
-      const reasoning = generateReasoning(ranked[0], emergencyType as EmergencyType);
+      const ranked = rankHospitals(snapshot, emergencyType);
+      const reasoning = generateReasoning(ranked[0], emergencyType);
 
       prisma.decisionRecord.create({
         data: {
-          emergencyType: emergencyType as string,
+          emergencyType,
           bestHospitalName: ranked[0].name,
           bestHospitalScore: ranked[0].score,
           reasoning,
@@ -92,7 +100,7 @@ export async function decisionRoutes(fastify: FastifyInstance): Promise<void> {
       }).catch((err) => fastify.log.error('DB write failed:', err));
 
       try {
-        recordDecision(emergencyType as string, ranked[0].score);
+        recordDecision(emergencyType, ranked[0].score);
       } catch (err) {
         fastify.log.error({ err }, 'Metrics record failed');
       }

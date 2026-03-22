@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { EmergencyType, Hospital, DecisionResult, HospitalBase, DecisionRecord, MetricsSnapshot } from '@/lib/types';
 import { fetchDecision, fetchHospitals, fetchDecisionWithData, fetchHistory, fetchMetrics } from '@/lib/api';
+import { decisionBreaker } from '@/lib/circuitBreaker';
 import MapWrapper from '@/app/components/MapWrapper';
 import MetricsPanel from '@/app/components/MetricsPanel';
 
@@ -46,6 +47,11 @@ export default function HomePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null);
   const [showMetrics, setShowMetrics] = useState(false);
+  const [circuitOpen, setCircuitOpen] = useState(false);
+
+  useEffect(() => {
+    setCircuitOpen(decisionBreaker.getState() === 'open');
+  }, []);
 
   useEffect(() => {
     const pollMetrics = async () => {
@@ -118,6 +124,7 @@ export default function HomePage() {
         // Silent history error
       }
     } catch (err) {
+      setCircuitOpen(decisionBreaker.getState() === 'open');
       setError('Unable to connect to the decision service. Please try again.');
     } finally {
       setIsLoading(false);
@@ -149,6 +156,13 @@ export default function HomePage() {
             </button>
           )}
         </header>
+
+        {circuitOpen && (
+          <div className="mb-4 rounded-lg border border-red-500 bg-red-950/30 p-3 flex items-center gap-2">
+            <span className="text-red-400 text-sm font-semibold">⚠ Backend unavailable</span>
+            <span className="text-red-300 text-xs">System is recovering. Please wait 15 seconds before retrying.</span>
+          </div>
+        )}
 
         {showMetrics && metrics && (
           <div className="mb-6">
