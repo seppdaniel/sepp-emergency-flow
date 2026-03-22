@@ -15,6 +15,19 @@ const VALID_EMERGENCY_TYPES: EmergencyType[] = [
 interface DecisionBody {
   emergencyType: string;
   hospitals?: (HospitalBase & { beds: number; occupancy: number })[];
+  userLocation?: { lat: number; lng: number };
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function generateReasoning(best: Hospital, emergencyType: EmergencyType): string {
@@ -48,14 +61,23 @@ function generateReasoning(best: Hospital, emergencyType: EmergencyType): string
 
 export async function decisionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: DecisionBody }>('/api/decision', async (request, reply) => {
-    const { emergencyType, hospitals } = request.body;
+    const { emergencyType, hospitals, userLocation } = request.body;
 
     if (!emergencyType || !VALID_EMERGENCY_TYPES.includes(emergencyType as EmergencyType)) {
       return reply.status(400).send({ error: 'Invalid emergency type' });
     }
 
     try {
-      const snapshot = hospitals || getHospitalSnapshot();
+      let snapshot = hospitals || getHospitalSnapshot();
+      
+      if (userLocation) {
+        snapshot = snapshot.map((h) => {
+          const distance = Math.round(haversineKm(userLocation.lat, userLocation.lng, h.lat, h.lng) * 10) / 10;
+          const estimatedTime = Math.floor(distance * 2.5) + 5;
+          return { ...h, distance, estimatedTime };
+        });
+      }
+
       const ranked = rankHospitals(snapshot, emergencyType as EmergencyType);
       const reasoning = generateReasoning(ranked[0], emergencyType as EmergencyType);
 

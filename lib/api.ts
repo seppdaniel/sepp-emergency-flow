@@ -2,11 +2,14 @@ import type { DecisionResult, EmergencyType, HospitalBase, DecisionRecord } from
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-export async function fetchDecision(emergencyType: EmergencyType): Promise<DecisionResult> {
+export async function fetchDecision(
+  emergencyType: EmergencyType,
+  userLocation?: { lat: number; lng: number }
+): Promise<DecisionResult> {
   const response = await fetch(`${API_URL}/api/decision`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ emergencyType }),
+    body: JSON.stringify({ emergencyType, userLocation }),
   });
 
   if (!response.ok) {

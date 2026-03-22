@@ -7,6 +7,8 @@ export const HOSPITAL_BASES: HospitalBase[] = [
     distance: 8.4,
     estimatedTime: 25,
     specialties: ['heart_attack', 'stroke'],
+    lat: -25.4284,
+    lng: -49.2733,
   },
   {
     id: 'hospital-1',
@@ -14,6 +16,8 @@ export const HOSPITAL_BASES: HospitalBase[] = [
     distance: 5.1,
     estimatedTime: 18,
     specialties: ['accident', 'breathing_problem'],
+    lat: -25.4372,
+    lng: -49.2692,
   },
   {
     id: 'hospital-2',
@@ -21,6 +25,8 @@ export const HOSPITAL_BASES: HospitalBase[] = [
     distance: 12.0,
     estimatedTime: 34,
     specialties: ['stroke'],
+    lat: -25.4190,
+    lng: -49.2610,
   },
   {
     id: 'hospital-3',
@@ -28,6 +34,8 @@ export const HOSPITAL_BASES: HospitalBase[] = [
     distance: 4.7,
     estimatedTime: 16,
     specialties: ['heart_attack', 'stroke', 'accident'],
+    lat: -25.4501,
+    lng: -49.2801,
   },
   {
     id: 'hospital-4',
@@ -35,6 +43,8 @@ export const HOSPITAL_BASES: HospitalBase[] = [
     distance: 2.9,
     estimatedTime: 12,
     specialties: ['heart_attack', 'severe_bleeding'],
+    lat: -25.4423,
+    lng: -49.2756,
   },
 ];
 

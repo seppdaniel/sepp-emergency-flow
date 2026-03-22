@@ -11,6 +11,8 @@ export interface HospitalBase {
   distance: number;
   estimatedTime: number;
   specialties: EmergencyType[];
+  lat: number;
+  lng: number;
 }
 
 export interface Hospital {
@@ -23,6 +25,8 @@ export interface Hospital {
   specialties: EmergencyType[];
   score: number;
   status: 'excellent' | 'good' | 'risk';
+  lat: number;
+  lng: number;
 }
 
 export interface EmergencyWeights {

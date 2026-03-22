@@ -23,6 +23,8 @@ const createHospital = (overrides: Partial<{
   beds: number;
   occupancy: number;
   specialties: EmergencyType[];
+  lat: number;
+  lng: number;
 }> = {}) => ({
   id: 'test-1',
   name: 'Test Hospital',
@@ -31,6 +33,8 @@ const createHospital = (overrides: Partial<{
   beds: 10,
   occupancy: 0.5,
   specialties: [] as EmergencyType[],
+  lat: -25.4372,
+  lng: -49.2731,
   ...overrides,
 });
 

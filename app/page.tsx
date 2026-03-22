@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { EmergencyType, Hospital, DecisionResult, HospitalBase, DecisionRecord } from '@/lib/types';
 import { fetchDecision, fetchHospitals, fetchDecisionWithData, fetchHistory } from '@/lib/api';
+import MapWrapper from '@/app/components/MapWrapper';
 
 const EMERGENCY_OPTIONS: { value: EmergencyType; label: string }[] = [
   { value: 'heart_attack', label: 'Heart attack' },
@@ -40,6 +41,24 @@ export default function HomePage() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [history, setHistory] = useState<DecisionRecord[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          setLocationError('Location unavailable — using default distances');
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (!selectedEmergency) return;
@@ -71,7 +90,7 @@ export default function HomePage() {
     try {
       const decision = liveHospitals
         ? await fetchDecisionWithData(selectedEmergency, liveHospitals)
-        : await fetchDecision(selectedEmergency);
+        : await fetchDecision(selectedEmergency, userLocation || undefined);
       setResult(decision);
 
       try {
@@ -89,6 +108,7 @@ export default function HomePage() {
 
   const bestHospital = result?.best ?? null;
   const alternativeHospitals = result?.alternatives ?? [];
+  const mapHospitals = result?.best ? [result.best, ...result.alternatives] : [];
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -122,6 +142,26 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          <div className="mb-3 flex items-center gap-2">
+            {userLocation ? (
+              <>
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+                <span className="text-xs text-emerald-400">GPS active</span>
+              </>
+            ) : locationError ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-yellow-400"></span>
+                <span className="text-xs text-yellow-400">{locationError}</span>
+              </>
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-gray-500"></span>
+                <span className="text-xs text-gray-500">Acquiring location...</span>
+              </>
+            )}
+          </div>
+
           <select
             id="emergency-select"
             value={selectedEmergency}
@@ -277,6 +317,17 @@ export default function HomePage() {
               </section>
             )}
           </div>
+        )}
+
+        {hasSearched && !isLoading && mapHospitals.length > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-3 text-lg font-semibold text-emerald-400">Map</h2>
+            <MapWrapper
+              hospitals={mapHospitals}
+              bestHospitalId={result?.best?.id ?? null}
+              userLocation={userLocation}
+            />
+          </section>
         )}
 
         {hasSearched && !isLoading && result?.alternatives.length === 0 && (

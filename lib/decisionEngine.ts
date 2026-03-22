@@ -88,6 +88,14 @@ const HOSPITAL_NAMES = [
   'Heart Institute',
 ];
 
+const HOSPITAL_COORDS = [
+  { lat: -25.4284, lng: -49.2733 },
+  { lat: -25.4372, lng: -49.2692 },
+  { lat: -25.4190, lng: -49.2610 },
+  { lat: -25.4501, lng: -49.2801 },
+  { lat: -25.4423, lng: -49.2756 },
+];
+
 const ALL_SPECIALTIES: EmergencyType[] = [
   'heart_attack',
   'stroke',
@@ -117,6 +125,8 @@ export function generateMockHospitals(emergencyType: EmergencyType): Hospital[] 
       beds,
       occupancy,
       specialties,
+      lat: HOSPITAL_COORDS[index].lat,
+      lng: HOSPITAL_COORDS[index].lng,
     };
   });
 
