@@ -16,10 +16,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+COPY --from=builder /app/lib ../lib
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/node_modules ./node_modules
 COPY --from=builder /app/backend/prisma ./prisma
-COPY --from=builder /app/lib ../lib
+COPY --from=builder /app/backend/package.json ./package.json
 
 ENV NODE_ENV=production
 EXPOSE 3001
