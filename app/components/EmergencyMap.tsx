@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
-import type { Icon, DivIcon } from 'leaflet';
+import type { Icon, DivIcon, LatLngExpression } from 'leaflet';
 import type { Hospital } from '@/lib/types';
 
 interface EmergencyMapProps {
@@ -63,7 +63,7 @@ export default function EmergencyMap({ hospitals, bestHospitalId, userLocation }
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution=""
       />
 
       {hospitals.map((hospital) => (
@@ -105,9 +105,7 @@ export default function EmergencyMap({ hospitals, bestHospitalId, userLocation }
             [userLocation.lat, userLocation.lng],
             [bestHospital.lat, bestHospital.lng],
           ]}
-          color="#10b981"
-          weight={3}
-          dashArray="6, 10"
+          pathOptions={{ color: '#10b981', weight: 3, dashArray: '6, 10' }}
         />
       )}
     </MapContainer>

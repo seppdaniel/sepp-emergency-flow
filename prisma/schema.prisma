@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model DecisionRecord {
+  id                Int      @id @default(autoincrement())
+  timestamp         DateTime @default(now())
+  emergencyType     String
+  bestHospitalName  String
+  bestHospitalScore Int
+  reasoning         String
+}
+
+model HospitalState {
+  id        String   @id
+  beds      Int
+  occupancy Float
+  updatedAt DateTime @updatedAt
+}
+
+model MetricRecord {
+  id            Int      @id @default(autoincrement())
+  route         String
+  durationMs    Int
+  isError       Boolean
+  emergencyType String?
+  score         Int?
+  createdAt     DateTime @default(now())
+}
