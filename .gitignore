@@ -27,6 +27,8 @@ coverage/
 # Backend
 backend/dist/
 backend/node_modules/
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
 
 # Generated
 lib/*.js

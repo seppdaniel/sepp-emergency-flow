@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { EmergencyType, Hospital, DecisionResult, HospitalBase } from '@/lib/types';
-import { fetchDecision, fetchHospitals, fetchDecisionWithData } from '@/lib/api';
+import { EmergencyType, Hospital, DecisionResult, HospitalBase, DecisionRecord } from '@/lib/types';
+import { fetchDecision, fetchHospitals, fetchDecisionWithData, fetchHistory } from '@/lib/api';
 
 const EMERGENCY_OPTIONS: { value: EmergencyType; label: string }[] = [
   { value: 'heart_attack', label: 'Heart attack' },
@@ -26,6 +26,10 @@ function StatusBadge({ status }: { status: Hospital['status'] }) {
   );
 }
 
+function formatEmergencyType(type: string): string {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function HomePage() {
   const [selectedEmergency, setSelectedEmergency] = useState<EmergencyType | ''>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +38,8 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [liveHospitals, setLiveHospitals] = useState<(HospitalBase & { beds: number; occupancy: number })[] | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [history, setHistory] = useState<DecisionRecord[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (!selectedEmergency) return;
@@ -67,6 +73,13 @@ export default function HomePage() {
         ? await fetchDecisionWithData(selectedEmergency, liveHospitals)
         : await fetchDecision(selectedEmergency);
       setResult(decision);
+
+      try {
+        const hist = await fetchHistory(10);
+        setHistory(hist);
+      } catch {
+        // Silent history error
+      }
     } catch (err) {
       setError('Unable to connect to the decision service. Please try again.');
     } finally {
@@ -130,12 +143,53 @@ export default function HomePage() {
           >
             {isLoading ? 'Searching...' : 'Find best destination'}
           </button>
+
+          {history.length > 0 && (
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="mt-2 block w-full text-sm text-gray-400 hover:text-gray-200 underline text-center"
+            >
+              View history ({history.length})
+            </button>
+          )}
         </section>
 
         {error && (
           <div className="mb-6 rounded-lg border border-red-500 bg-red-950/30 p-4">
             <p className="text-sm text-red-400">{error}</p>
           </div>
+        )}
+
+        {showHistory && history.length > 0 && (
+          <section className="mb-6 rounded-lg bg-gray-900 p-4 shadow-lg">
+            <h2 className="mb-3 text-sm font-semibold text-gray-400 uppercase tracking-wide">
+              Decision History
+            </h2>
+            {history.map((record) => (
+              <div
+                key={record.id}
+                className="mb-2 rounded bg-gray-800 p-3 border-l-2 border-emerald-500"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-500">
+                    {new Date(record.timestamp).toLocaleTimeString()}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {formatEmergencyType(record.emergencyType)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-200">
+                    {record.bestHospitalName}
+                  </span>
+                  <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
+                    {record.bestHospitalScore}/100
+                  </span>
+                </div>
+                <p className="text-xs italic text-gray-500">{record.reasoning}</p>
+              </div>
+            ))}
+          </section>
         )}
 
         {hasSearched && !isLoading && result && (

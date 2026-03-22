@@ -38,3 +38,12 @@ export interface DecisionResult {
   alternatives: Hospital[];
   reasoning: string;
 }
+
+export interface DecisionRecord {
+  id: number;
+  timestamp: string;
+  emergencyType: string;
+  bestHospitalName: string;
+  bestHospitalScore: number;
+  reasoning: string;
+}
