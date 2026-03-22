@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { EmergencyType, Hospital, DecisionResult } from '@/lib/types';
-import { runDecision } from '@/lib/decisionEngine';
+import { fetchDecision } from '@/lib/api';
 
 const EMERGENCY_OPTIONS: { value: EmergencyType; label: string }[] = [
   { value: 'heart_attack', label: 'Heart attack' },
@@ -31,18 +31,24 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<DecisionResult | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!selectedEmergency) return;
 
     setIsLoading(true);
     setHasSearched(true);
+    setError(null);
+    setResult(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const decision = runDecision(selectedEmergency);
-    setResult(decision);
-    setIsLoading(false);
+    try {
+      const decision = await fetchDecision(selectedEmergency);
+      setResult(decision);
+    } catch (err) {
+      setError('Unable to connect to the decision service. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const bestHospital = result?.best ?? null;
@@ -89,6 +95,12 @@ export default function HomePage() {
             {isLoading ? 'Searching...' : 'Find best destination'}
           </button>
         </section>
+
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-500 bg-red-950/30 p-4">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
 
         {hasSearched && !isLoading && result && (
           <div className="space-y-6">
